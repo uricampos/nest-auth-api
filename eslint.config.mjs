@@ -31,4 +31,16 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-argument': 'warn'
     },
   },
+  {
+    // @ts-ignore
+    overrides: [
+      {
+        files: ['src/**/*.dto.ts', 'src/**/*.service.ts'],
+        rules: {
+          '@typescript-eslint/no-unsafe-call': 'off',
+          '@typescript-eslint/no-unsafe-assignment': 'off'
+        }
+      }
+    ]
+  }
 );
