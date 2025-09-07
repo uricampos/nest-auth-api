@@ -1,12 +1,16 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { User } from 'generated/prisma';
-import { hashPassword } from 'src/utils/hashPassword';
+import { comparePassword, hashPassword } from 'src/utils/password';
 import { PrismaService } from '../prisma/prisma.service';
 import * as auth from './dtos/auth';
 
 @Injectable()
 export class AuthService {
-  constructor(private prismaService: PrismaService) {}
+  constructor(
+    private prismaService: PrismaService,
+    private jwtService: JwtService,
+  ) {}
   async signup(data: auth.SignUpDTO) {
     const userAlreadyExists = await this.prismaService.user.findUnique({
       where: {
@@ -32,7 +36,30 @@ export class AuthService {
   }
 
   async signin(data: auth.SingInDTO) {
-    console.log({ data });
-    return 'signin';
+    const user = await this.prismaService.user.findUnique({
+      where: {
+        email: data.email,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid Credentials');
+    }
+
+    const passwordMatch = await comparePassword(user.password, data.password);
+
+    if (!passwordMatch) {
+      throw new UnauthorizedException('Invalid Credentials');
+    }
+
+    const accessToken = await this.jwtService.signAsync({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+    });
+
+    return {
+      accessToken,
+    };
   }
 }
